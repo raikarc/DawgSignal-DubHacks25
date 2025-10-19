@@ -1,0 +1,36 @@
+modules:
+  jira:adminPage:
+    - key: rrrn-dubhacks-hello-world-admin-page
+      resource: main
+      resolver:
+        function: resolver
+      render: native
+      title: rrrn dubhacks
+  function:
+    - key: resolver
+      handler: index.handler
+resources:
+  - key: main
+    path: src/frontend/index.jsx
+app:
+  runtime:
+    name: nodejs22.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/33f9b1a5-175a-4b1a-bd6b-6b44da50f94e
+permissions:
+  scopes:
+    - read:jira-work
+    # - write:jira-work
+    - read:jira-user
+    - write:jira-user
+    - read:confluence-content.summary
+    - write:confluence-content
+    - storage:app
+    # - external:fetch
+external:
+  fetch:
+    backend:
+      - https://maps.googleapis.com
+      - https://api.openai.com
+      - https://your-trello-api.com

@@ -1,0 +1,25 @@
+modules:
+  jira:dashboardGadget:
+    - key: closest-bus-button-dashboard-gadget-ui-kit-2-hello-world-gadget
+      title: Find My Closest Stop
+      description: A gadget that returns which bus stop is closest to you
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver:
+        function: resolver
+      edit:
+        resource: main-resource
+        render: native
+  function:
+    - key: resolver
+      handler: index.handler
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+app:
+  runtime:
+    name: nodejs22.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/7a2baee0-9406-49e6-be73-a4dd14cbdd02

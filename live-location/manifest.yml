@@ -1,0 +1,41 @@
+modules:
+  jira:customFieldType:
+    - key: live-location-custom-field-type-ui-kit-2-hello-world
+      name: live-location
+      description: A hello world custom field.
+      type: string
+      view:
+        render: native
+        resource: main
+        experience:
+          - issue-view
+          - portal-view
+      edit:
+        resource: edit
+        render: native
+        isInline: true
+        experience:
+          - issue-create
+          - issue-transition
+          - issue-view
+          - portal-request
+        validation:
+          expression: value == null || !!value.match(configuration?.regex || "^[A-Za-z]+$")
+          errorMessage: The value is invalid
+      contextConfig:
+        resource: config
+        layout: basic
+        render: native
+resources:
+  - key: main
+    path: src/frontend/index.jsx
+  - key: edit
+    path: src/frontend/edit.jsx
+  - key: config
+    path: src/frontend/context-config.jsx
+app:
+  runtime:
+    name: nodejs22.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/22ccd9e7-1aef-4e2a-9200-dd8c4e71f97a

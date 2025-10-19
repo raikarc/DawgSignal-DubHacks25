@@ -1,11 +1,11 @@
 modules:
   jira:adminPage:
-    - key: dubhacks-25-hello-world-admin-page
+    - key: test-hello-world-admin-page
       resource: main
       resolver:
         function: resolver
       render: native
-      title: dubhacks-25
+      title: test
   function:
     - key: resolver
       handler: index.handler
@@ -17,4 +17,4 @@ app:
     name: nodejs22.x
     memoryMB: 256
     architecture: arm64
-  id: ari:cloud:ecosystem::app/0cc21e51-b49c-4049-a218-2d310b4da6f2
+  id: ari:cloud:ecosystem::app/29a4fdba-7a4c-43fc-b25c-befa6c497c75
