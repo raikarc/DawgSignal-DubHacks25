@@ -1,27 +1,25 @@
 modules:
-  # jira:projectPage:
-  #   - key: busapp-project-page
-  #     resource: main
-  #     resolver:
-  #       function: resolver
-  #     name: BusApp
-  #     title: Bus Tracker
-  #     icon: https://developer.atlassian.com/platform/forge/images/icons/generic-addon-72.png
-  #     layout: basic
+  jira:issuePanel:
+    - key: bus-tracker-panel
+      resource: main
+      resolver:
+        function: resolver
+      title: Bus Location Tracker
+      icon: https://developer.atlassian.com/platform/forge/images/icons/generic-addon-72.png
 
   function:
+    - key: resolver
+      handler: index.handler
     - key: on-bus-created-fn
       handler: resolvers/onBusCreated.handler
     - key: loc-tracker-fn
       handler: resolvers/locationTracker.handler
-    - key: bus-flow-fn
-      handler: resolvers/busFlow.handler
 
   trigger:
     - key: on-bus-created
       function: on-bus-created-fn
       events:
-        - jira:issue_created
+        - avi:jira:created:issue
 
 resources:
   - key: main
@@ -44,5 +42,3 @@ app:
     memoryMB: 256
     architecture: arm64
   id: ari:cloud:ecosystem::app/d0758a4a-cafe-4372-8fc5-920563eefb53
-
-

@@ -1,137 +1,116 @@
-// import api, { route } from "@forge/api";
-
-// const BUS_STOP_COORDS = {
-//   "IMA": { lat: 47.660992, lng: -122.298439 },
-//   "COMMS BLD": { lat: 47.654169, lng: -122.316808 },
-//   "HUB": { lat: 47.656410, lng: -122.304840 },
-//   "OKANOGAN LANE": { lat: 47.652079, lng: -122.308557 },
-//   "MEANY HALL": { lat: 47.655270, lng: -122.311493 }, 
-//   "FLAGPOLE": { lat: 47.658574, lng: -122.3096688 }
-// };
-
-// // Get street name from coordinates
-// async function reverseGeocode(lat, lng) {
-//   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-//   const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
-//   const res = await fetch(url);
-//   const data = await res.json();
-//   if (data.results && data.results.length > 0) {
-//     return data.results[0].formatted_address;
-//   }
-//   return "Unknown street";
-// }
-
-// // Get ETA in minutes from current location to next stop
-// async function getETA(lat, lng, destLat, destLng) {
-//   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-//   const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${lat},${lng}&destination=${destLat},${destLng}&key=${apiKey}&mode=driving`;
-//   const res = await fetch(url);
-//   const data = await res.json();
-//   if (data.routes && data.routes.length > 0) {
-//     const durationSec = data.routes[0].legs[0].duration.value;
-//     return Math.round(durationSec / 60); // minutes
-//   }
-//   return null;
-// }
-
-// export async function handler(event) {
-//    const { busName, issueKey, lat, lng } = event.payload;
-
-//   try {
-//     // 1️⃣ Current status and next stop
-//     const issueResp = await api.asApp().requestJira(route`/rest/api/3/issue/${issueKey}?fields=status`);
-//     const issueData = await issueResp.json();
-//     const currentStatus = issueData.fields.status.name;
-
-//     const stops = Object.keys(BUS_STOP_COORDS);
-//     const currentIndex = stops.indexOf(currentStatus);
-//     const nextStop = stops[currentIndex + 1];
-
-//     if (!nextStop) return; // final stop reached
-
-//     const nextCoords = BUS_STOP_COORDS[nextStop];
-
-//     // 2️⃣ Get street name
-//     const streetName = await reverseGeocode(lat, lng);
-
-//     // 3️⃣ Get ETA
-//     const eta = await getETA(lat, lng, nextCoords.lat, nextCoords.lng);
-
-//     // 4️⃣ Update Jira issue description
-//     const descriptionText = `
-// Current location: (${lat.toFixed(5)}, ${lng.toFixed(5)}) — ${streetName}
-// Next stop: ${nextStop}
-// Next stop coordinates: (${nextCoords.lat.toFixed(5)}, ${nextCoords.lng.toFixed(5)})
-// Estimated time to next stop: ${eta ? eta + " minutes" : "N/A"}
-// `;
-
-//     await api.asApp().requestJira(route`/rest/api/3/issue/${issueKey}`, {
-//       method: "PUT",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ fields: { description: descriptionText } })
-//     });
-
-//     console.log(`Updated ${busName} description with location, street, and ETA`);
-
-//     // 5️⃣ Trigger proximity check
-//     await api.asApp().invoke("check-bus-proximity-fn", {
-//       payload: { busName, issueKey, lat, lng }
-//     });
-
-//   } catch (err) {
-//     console.error("Error in location tracker:", err);
-//   }
-// }
-
-// import api, { route } from "@forge/api";
-
-// const BUS_COORDS = {
-//   "Bus-42": { lat: 47.6553, lng: -122.3035, speed: 38 },
-//   "Bus-46": { lat: 47.6580, lng: -122.3080, speed: 40 }
-// };
-
-// export async function handler(event) {
-//   const { busName, issueKey } = event.payload;
-//   const coords = BUS_COORDS[busName] || { lat: 0, lng: 0, speed: 0 };
-
-//   const description = `
-// Current location: (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})
-// Speed: ${coords.speed} km/h
-// Next stop: TBD
-// `;
-
-//   await api.asApp().requestJira(route`/rest/api/3/issue/${issueKey}`, {
-//     method: "PUT",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ fields: { description } })
-//   });
-
-//   console.log(`Updated ${busName} description`);
-// }
-
 import api, { route } from "@forge/api";
 
-// Hardcoded for testing — in real life, this would come from the device
-const HARD_CODED_COORDS = {
-  "Bus-42": { lat: 47.6553, lng: -122.3035 },
-  "Bus-46": { lat: 47.6580, lng: -122.3080 }
+const BUS_STOP_COORDS = {
+  "IMA": { lat: 47.660992, lng: -122.298439 },
+  "COMMS BLD": { lat: 47.654169, lng: -122.316808 },
+  "HUB": { lat: 47.656410, lng: -122.304840 },
+  "OKANOGAN LANE": { lat: 47.652079, lng: -122.308557 },
+  "MEANY HALL": { lat: 47.655270, lng: -122.311493 }, 
+  "FLAGPOLE": { lat: 47.658574, lng: -122.3096688 }
 };
 
+// Calculate distance between two coordinates in meters
+function distance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // Earth radius in meters
+  const toRad = (x) => (x * Math.PI) / 180;
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δφ = toRad(lat2 - lat1);
+  const Δλ = toRad(lon2 - lon1);
+
+  const a = Math.sin(Δφ/2)**2 +
+            Math.cos(φ1)*Math.cos(φ2) *
+            Math.sin(Δλ/2)**2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 export async function handler(event) {
-  const { busName, issueKey } = event.payload;
+  const { busName, issueKey, lat, lng } = event.payload;
 
-  // Get current coordinates
-  const busNameKey = busName.trim();
-  const coords = HARD_CODED_COORDS[busNameKey] || { lat: 0, lng: 0 };
+  try {
+    // Get current issue status
+    const issueResponse = await api.asApp().requestJira(
+      route`/rest/api/3/issue/${issueKey}?fields=status`
+    );
+    const issueData = await issueResponse.json();
+    const currentStatus = issueData.fields.status.name;
 
-  // Update Jira issue description
-  const description = `Current location of ${busName}:\nLatitude: ${coords.lat.toFixed(5)}\nLongitude: ${coords.lng.toFixed(5)}`;
+    // Update description with current location
+    const description = `
+Bus: ${busName}
+Current Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}
+Current Status: ${currentStatus}
+Last Updated: ${new Date().toISOString()}
+    `.trim();
 
-  await api.asApp().requestJira(route`/rest/api/3/issue/${issueKey}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fields: { description } })
-  });
+    await api.asApp().requestJira(route`/rest/api/3/issue/${issueKey}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields: { description } })
+    });
 
-  console.log(`Updated ${busName} coordinates in ${issueKey}`);
+    console.log(`Updated location for ${busName}: ${lat}, ${lng}`);
+
+    // Check proximity to next stop
+    const statusOrder = Object.keys(BUS_STOP_COORDS);
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    const nextStatus = statusOrder[currentIndex + 1];
+
+    if (!nextStatus) {
+      console.log(`${busName} has reached the final stop`);
+      return { success: true, message: "Final stop reached" };
+    }
+
+    // Calculate distance to next stop
+    const nextCoords = BUS_STOP_COORDS[nextStatus];
+    const dist = distance(lat, lng, nextCoords.lat, nextCoords.lng);
+
+    console.log(`Bus ${busName} is ${dist.toFixed(1)}m from ${nextStatus}`);
+
+    // If within 50 meters, transition to next status
+    if (dist < 50) {
+      // Get available transitions
+      const transitionsResp = await api.asApp().requestJira(
+        route`/rest/api/3/issue/${issueKey}/transitions`,
+        { method: "GET" }
+      );
+      const transitions = await transitionsResp.json();
+      
+      // Find transition to next status
+      const nextTransition = transitions.transitions.find(
+        t => t.name === nextStatus || t.to.name === nextStatus
+      );
+
+      if (nextTransition) {
+        await api.asApp().requestJira(
+          route`/rest/api/3/issue/${issueKey}/transitions`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ transition: { id: nextTransition.id } })
+          }
+        );
+        console.log(`Moved ${busName} to ${nextStatus}`);
+        return { 
+          success: true, 
+          message: `Transitioned to ${nextStatus}`,
+          distance: dist 
+        };
+      } else {
+        console.log(`No transition found to ${nextStatus}`);
+      }
+    }
+
+    return { 
+      success: true, 
+      message: "Location updated",
+      distance: dist,
+      nextStop: nextStatus 
+    };
+
+  } catch (err) {
+    console.error(`Error in location tracker:`, err);
+    return { success: false, error: err.message };
+  }
 }
