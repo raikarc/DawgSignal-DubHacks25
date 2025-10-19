@@ -1,45 +1,87 @@
-import { ElevenLabsClient, play } from '@elevenlabs/elevenlabs-js';
-import 'dotenv/config';
+const express = require('express');
+const { ElevenLabsClient, play } = require('@elevenlabs/elevenlabs-js');
+require('dotenv').config();
+
+const app = express();
+const port = 3000;
+
+app.use(express.json());
 
 const elevenlabs = new ElevenLabsClient();
 
-async function main() {
-  let b1 = false;
+app.post('/tts', async (req, res) => {
+  const {status, issueKey, issueName } = req.body;
 
-  if (b1) {
-    const audio = await elevenlabs.textToSpeech.convert('2EiwWnXFnvU5JabPnv8n', {
-      text: 'Bus 1 is x minutes away.',
-      modelId: 'eleven_multilingual_v2',
-      outputFormat: 'mp3_44100_128',
-    });
-    await play(audio);
-  }
-  else{
-      const audio = await elevenlabs.textToSpeech.convert('PPzYpIqttlTYA83688JI', {
-      text: 'Bus 2 is x minutes away.',
-      modelId: 'eleven_multilingual_v2',
-      outputFormat: 'mp3_44100_128',
-    });
-    await play(audio);
-  }
+  try {
 
-  b1 = true;
-  if (b1) {
-    const audio = await elevenlabs.textToSpeech.convert('KSsyodh37PbfWy29kPtx', {
-      text: 'Bus 1 is x minutes away.',
-      modelId: 'eleven_multilingual_v2',
-      outputFormat: 'mp3_44100_128',
-    });
-    await play(audio);
-  }
-  else{
-      const audio = await elevenlabs.textToSpeech.convert('JBFqnCBsd6RMkjVDRZzb', {
-      text: 'hello world.',
-      modelId: 'eleven_multilingual_v2',
-      outputFormat: 'mp3_44100_128',
-    });
-    await play(audio);
-  }
-}
+    // message = `Bus number ${issueKey} has moved to ${status}`;
+    // voiceId = 'JBFqnCBsd6RMkjVDRZzb';
 
-main().catch(console.error);
+    // if (issueKey === 'RD-2') {
+    //     message = `Bus number ${issueKey} has moved to ${status}`;
+    //     voiceId = 'JBFqnCBsd6RMkjVDRZzb';
+    // }
+
+    // if (issueName === 'Bus 1') {
+    //     message = `Awoo! ${issueName} has moved to ${status}`;
+    //     voiceId = 'JBFqnCBsd6RMkjVDRZzb'; 
+    // }
+
+    if (issueName === 'Awoo Stu (Bus 4)') {
+        message = `Awoo! ${issueName} has moved to ${status}`;
+        voiceId = 'JBFqnCBsd6RMkjVDRZzb'; 
+    }
+
+    if (issueName === 'Howly Hank (Bus 5)') {
+        message = `All Aboard! ${issueName} has arrived at ${status}`;
+        //message = `Bus ${issueName} has moved to ${status}`;
+        voiceId = 'JBFqnCBsd6RMkjVDRZzb'; 
+    }
+
+    if (issueName === 'Skye (Bus 6)') {
+        //message = `Bus ${issueName} has moved to ${status}`;
+        message = `Let's take to the sky! ${issueName} pulling up to ${status}`;
+        voiceId = 'JBFqnCBsd6RMkjVDRZzb'; 
+    }
+
+    if (issueName === 'Ecstatic Pup (Bus 3)') {
+        //message = `Bus ${issueName} has moved to ${status}`;
+        message = `Get ecstatic because ${issueName} has moved to ${status}`;
+        voiceId = 'JBFqnCBsd6RMkjVDRZzb'; 
+    }
+
+    if (issueName === 'Intelli-Dog (Bus 1)') {
+        //message = `Bus ${issueName} has moved to ${status}`;
+        message = `${issueName} has moved to ${status}, ready to rescue more riders`;
+        voiceId = 'JBFqnCBsd6RMkjVDRZzb'; 
+    }
+
+    if (issueName === 'Purple Patrol (7)') {
+        //message = `Bus ${issueName} has moved to ${status}`;
+        message = `${issueName} is patrolling to ${status}`;
+        voiceId = 'EXAVITQu4vr4xnSDxMaL'; 
+    }
+
+    if (issueName === 'Shadow Paw (Bus 2)') {
+        message = `A shadow descends as ${issueName} moves to ${status}`;
+        //message = `Bus ${issueName} has moved to ${status}`;
+        voiceId = 'JBFqnCBsd6RMkjVDRZzb'; 
+    }
+
+    const audio = await elevenlabs.textToSpeech.convert(voiceId, {
+      text: message,
+      modelId: 'eleven_multilingual_v2',
+      outputFormat: 'mp3_44100_128',
+    });
+
+    await play(audio);
+    res.status(200).send('TTS played successfully');
+  } catch (err) {
+    console.error('TTS error:', err);
+    res.status(500).send('Error playing TTS');
+  }
+});
+
+app.listen(port, () => {
+  console.log(`TTS server listening at http://localhost:${port}`);
+});
